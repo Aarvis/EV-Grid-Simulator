@@ -1,0 +1,23 @@
+[project]
+name = "greensboro-grid-lab"
+version = "0.1.0"
+description = "SMART-DS electrical baseline and local diagnostic dashboard"
+requires-python = ">=3.11"
+dependencies = [
+    "OpenDSSDirect.py",
+    "fastapi",
+    "uvicorn",
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "networkx",
+    "pyarrow",
+    "scipy>=1.17.1",
+]
+
+[dependency-groups]
+dev = ["pytest", "httpx"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

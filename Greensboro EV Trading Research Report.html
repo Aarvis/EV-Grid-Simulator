@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Greensboro EV Trading Research Report</title>
+<style>
+:root { color-scheme: light; font: 17px/1.6 system-ui, sans-serif; color: #19283a; background: #f1f5f7; }
+body { margin: 0; }
+main { box-sizing: border-box; max-width: 1140px; margin: 0 auto; padding: clamp(16px, 5vw, 64px); background: white; }
+h1, h2, h3 { line-height: 1.2; color: #12263d; }
+h1 { font-size: clamp(1.85rem, 4.5vw, 3rem); margin: 0 0 .35em; }
+h2 { margin-top: 1.8em; border-top: 1px solid #c9d6dc; padding-top: .65em; }
+h3 { margin-top: 1.4em; }
+a { color: #005e86; }
+img { display: block; width: auto; max-width: 100%; height: auto; }
+table { display: block; overflow-x: auto; border-collapse: collapse; font-size: .91rem; }
+th, td { border-bottom: 1px solid #d6e0e5; padding: .55rem .75rem; }
+th { background: #eaf4f5; }
+tr:nth-child(even) td { background: #f6f8fa; }
+li + li { margin-top: .55em; }
+@media print { :root, main { background: white; } main { padding: 0; } img, tr { break-inside: avoid; } }
+</style>
+</head>
+<body><main>
+<h1>EV energy trading on a Greensboro distribution feeder</h1>
+<p><strong>Model and results from five 150-day simulations | April 1–August 28, 2018</strong></p>
+<h2>Overview</h2>
+<p>This study asks how much coal and natural gas generation a distribution feeder can avoid when electric vehicles choose <strong>when to charge, when to sell power back, and when to wait</strong>. We tested that question in five 150-day simulations on a synthetic feeder in Greensboro, North Carolina. Each run compared three cases under the same grid and generation assumptions: <strong>no EVs, EV charging only, and dynamic EV trading</strong>.</p>
+<p>We built the model in five steps:</p>
+<ol>
+<li><strong>Model the grid.</strong> We used the Greensboro SMART-DS network and ran OpenDSS every 15 minutes to track power demand, feeder losses, voltages, and equipment loading.</li>
+<li><strong>Build the EV fleet.</strong> We applied Greensboro household vehicle ownership data to 447 eligible homes. This gave 751 vehicles, or 1.68 per household. At 50% EV adoption, we modeled 376 EVs across four battery classes.</li>
+<li><strong>Model travel and charging.</strong> We sampled daily trips from the National Household Travel Survey. EVs could charge at home and at equipped destinations. In four runs, a March rollout let batteries accumulate charge and establish the cost of that stored energy before trading began.</li>
+<li><strong>Dispatch generation and trade.</strong> Fixed nuclear output and available solar supplied the feeder, with coal and gas adjusting to cover the remaining demand. Every 15 minutes, we shuffled the order of eligible EVs and updated the price after each commitment. Each connected EV could buy, sell, or wait based on the price, the cost of its stored energy, and the charge it needed for upcoming trips.</li>
+<li><strong>Compare the runs.</strong> We varied the rollout, the number of EVs that stayed parked, where they could sell power, and whether exports were screened against grid limits. We compared generation, customer bills, trade volumes, and grid violations.</li>
+</ol>
+<p>Across all five runs, dynamic trading used less coal and gas than charging alone. The largest reduction was <strong>345.39 MWh, or 5.18%</strong>, in the run where all EVs followed driving schedules. That run still used more coal and gas than the no-EV baseline, and its trading case recorded the most overload and voltage violation intervals of the five runs.</p>
+<h2>1. Build the network and the EV fleet</h2>
+<p>We used <strong>SMART-DS substation uhs19_1247</strong> in Greensboro, North Carolina. Its synthetic network represents plausible local infrastructure and uses a full year of modeled demand at 15-minute resolution. OpenDSS solves power flow for each interval, including feeder losses, bus voltage, and equipment loading. The model boundary runs from a 69 kV supply to customer connections. <a href="https://data.openei.org/submissions/2981">SMART-DS dataset</a></p>
+<table>
+<thead>
+<tr>
+<th>Network inventory</th>
+<th style="text-align: right;">Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Feeders / buses</td>
+<td style="text-align: right;">2 / 2,087</td>
+</tr>
+<tr>
+<td>Lines / transformers</td>
+<td style="text-align: right;">1,755 / 335</td>
+</tr>
+<tr>
+<td>Electrical load objects / unique customer connections</td>
+<td style="text-align: right;">1,329 / 732</td>
+</tr>
+<tr>
+<td>Residential-profile / commercial-profile connections</td>
+<td style="text-align: right;">458 / 274</td>
+</tr>
+<tr>
+<td>Residential connections eligible for household fleet assignment</td>
+<td style="text-align: right;">447</td>
+</tr>
+</tbody>
+</table>
+<p>The 447 eligible connections are 120/240 V split-phase services, each treated as one household for fleet assignment. The other 11 residential-profile services still draw power. A split-phase service can contain two OpenDSS load objects, which is why the object and customer counts differ. The load files use residential and commercial profiles. They give no separate count of verified industrial customers. In the latest baseline, the feeder drew <strong>23,591 MWh</strong> over 150 days and peaked at <strong>11.83 MW</strong>, including losses.</p>
+<h3>From households to 376 EVs</h3>
+<p>The Greensboro American Community Survey’s 2020–2024 estimates give shares of <strong>8.2%, 40.1%, 34.2%, and 17.5%</strong> for households with <strong>0, 1, 2, and 3+ vehicles</strong>, respectively. We split the final group into <strong>12% with 3 vehicles, 4% with 4, and 1.5% with 5</strong> as a modeling assumption. Applied to the feeder, the six groups contained <strong>37, 179, 153, 53, 18, and 7 households</strong>. Their vehicle counts sum to <strong>751</strong>, giving <strong>751 ÷ 447 = 1.68 vehicles per household</strong>. Fleet seed 32 assigns the ownership counts to homes and selects <strong>376 EVs</strong> at the <strong>50% adoption</strong> setting. <a href="https://data.census.gov/table/ACSDP5Y2024.DP04?g=160XX00US3728000">Census ACS housing table</a> · <a href="https://www.neilsberg.com/insights/topic/greensboro-nc/">Greensboro ACS figures as tabulated by Neilsberg</a></p>
+<table>
+<thead>
+<tr>
+<th>EV segment</th>
+<th style="text-align: right;">Target share</th>
+<th style="text-align: right;">EVs assigned</th>
+<th style="text-align: right;">Battery</th>
+<th style="text-align: right;">Level 2 charging</th>
+<th style="text-align: right;">Mean driving use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Small</td>
+<td style="text-align: right;">5%</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">35 kWh</td>
+<td style="text-align: right;">3.84 kW</td>
+<td style="text-align: right;">0.15 kWh/km</td>
+</tr>
+<tr>
+<td>Compact</td>
+<td style="text-align: right;">20%</td>
+<td style="text-align: right;">77</td>
+<td style="text-align: right;">55 kWh</td>
+<td style="text-align: right;">7.68 kW</td>
+<td style="text-align: right;">0.17 kWh/km</td>
+</tr>
+<tr>
+<td>Long-range / family</td>
+<td style="text-align: right;">60%</td>
+<td style="text-align: right;">214</td>
+<td style="text-align: right;">77.5 kWh</td>
+<td style="text-align: right;">9.60 kW</td>
+<td style="text-align: right;">0.20 kWh/km</td>
+</tr>
+<tr>
+<td>Large SUV / pickup</td>
+<td style="text-align: right;">15%</td>
+<td style="text-align: right;">68</td>
+<td style="text-align: right;">110 kWh</td>
+<td style="text-align: right;">11.52 kW</td>
+<td style="text-align: right;">0.27 kWh/km</td>
+</tr>
+</tbody>
+</table>
+<p>These battery classes and charger ratings are scenario inputs. The fleet has <strong>28.90 MWh</strong> of nominal storage. All EVs have home chargers, including <strong>59 Level 1 chargers at 1.44 kW</strong> and <strong>317 Level 2 chargers</strong>. Export is limited to the lower of the modeled charger rating and <strong>7.2 kW</strong>. Charging and discharging are each <strong>90% efficient</strong>, giving <strong>81% round-trip efficiency</strong> before feeder losses.</p>
+<h2>2. Model travel, charging access, and generation</h2>
+<p><strong>Travel.</strong> We filtered the national 2022 NHTS V2.1 file from <strong>31,074 trip records</strong> to <strong>5,591 complete home-to-home vehicle-day diaries</strong> containing <strong>16,435 driving legs</strong>. Each moving EV draws a complete diary, preserving its trip times and parking windows. The target is <strong>46 km/day</strong> with <strong>22.5 km</strong> standard deviation, bounded at <strong>0–120 km/day</strong>. Matching favors the same month and weekday, then broadens the search when needed. A fixed, seeded subset stays home for the entire experiment when the scenario calls for it. <a href="https://nhts.ornl.gov/downloads">FHWA NHTS downloads</a></p>
+<p><strong>Away charging.</strong> Each away stop is assigned to a reachable commercial-profile bus. The model equips all <strong>274 eligible buses</strong> with <strong>794 ports</strong>, distributed at <strong>one to five per bus</strong> using seed 42. A free port is assigned on arrival and held until departure. Away purchases are available in all five runs. Only runs <strong>C–E</strong> allow exports from those ports. An EV without a free port remains unplugged.</p>
+<p><strong>Battery initialization.</strong> In runs <strong>B–E</strong>, the simulator commissioned the fleet gradually over <strong>March 1–31</strong>. Newly commissioned EVs started empty, with connection times staggered during the day. The rollout lets them drive and charge according to the scenario and carries their battery energy and the recorded cost of that energy into April. Trading starts on April 1. Run <strong>A</strong> skips the rollout and starts April with empty batteries.</p>
+<table>
+<thead>
+<tr>
+<th>Upstream source</th>
+<th>Dispatch assumption</th>
+<th style="text-align: right;">Modeled cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nuclear</td>
+<td>Fixed at 3.696 MW</td>
+<td style="text-align: right;">$9.16/MWh</td>
+</tr>
+<tr>
+<td>Coal + natural gas</td>
+<td>Flexible supply with a 0.600 MW minimum</td>
+<td style="text-align: right;">$31.065/MWh</td>
+</tr>
+<tr>
+<td>Solar</td>
+<td>8 MW rated capacity × irradiance in kW/m² × 0.85 performance factor</td>
+<td style="text-align: right;">$0/MWh</td>
+</tr>
+</tbody>
+</table>
+<p>The model uses 2018 Greensboro NSRDB irradiance, averaged into 15-minute intervals. Solar and fixed nuclear reduce the power needed from the flexible coal + gas source. Generation above feeder draw is recorded as surplus. The coal and gas source is one aggregate with no separate fuel split, ramp-rate model, or start-up cost. <a href="https://developer.nlr.gov/docs/solar/nsrdb/nsrdb-GOES-conus-v4-0-0-download/">NSRDB GOES CONUS solar resource</a></p>
+<h2>3. Decide and settle EV trades every 15 minutes</h2>
+<ol>
+<li><strong>Start with a price.</strong> At the start of the upcoming interval, estimate substation draw from the base feeder demand, any passive EV charging, and the previous interval’s net trading demand. Use the projected generation mix to quote an average cost. The price is total modeled generation cost divided by total generated energy.</li>
+<li><strong>Shuffle and update.</strong> Use a fresh seeded shuffle of the eligible EVs each interval. As each vehicle commits, its buy adds demand and its sell subtracts demand. The forecast from the previous interval is phased out as actual commitments replace it. The next EV receives the updated quote.</li>
+<li><strong>Apply the battery rules.</strong> A connected EV below its protected energy target buys enough to reach the target as charger and parking time allow. Otherwise, it offers to sell when its export quote covers battery energy cost and discharge losses. Sales preserve at least <strong>10% charge</strong> or planned trip energy plus <strong>5% of battery capacity</strong>, whichever is higher. The last home stop uses the next day’s travel plan. When a sale does not qualify, the EV may buy if the cost per stored kWh, including charging losses and expected feeder loss charges, is below its average stored cost. Otherwise it waits. In charging-only cases, EVs charge toward full when plugged in.</li>
+<li><strong>Solve and bill.</strong> OpenDSS evaluates the combined interval schedule. With export screening on, a failed grid check cancels the interval’s sales and the feeder is solved again with purchases in place. With screening bypassed, a valid solve can settle sales even when equipment or voltage limits are exceeded. Those violations are still recorded. Cleared EV trades use the accepted quotes. Buyers pay an allocated share of feeder losses. The realized generation price is recalculated after the solve.</li>
+</ol>
+<p>The three cases inside each run are <strong>baseline</strong> (ordinary customer demand with no EVs), <strong>charging only</strong> (the same EVs and trips, with automatic charging), and <strong>dynamic trading</strong> (all 376 EVs eligible to buy, sell, or wait). Billing reports the cash impact, while the battery ledger tracks energy and its weighted-average book value. Battery wear cost was zero in these runs.</p>
+<h2>4. Compare the five completed runs</h2>
+<p>Each run settled <strong>14,400 intervals</strong>. Every case used the same <strong>13,305.60 MWh of modeled nuclear generation</strong> and <strong>5,967.96 MWh of solar generation</strong> across the 150 days. Charging and trading within each run share the opening battery state and travel restrictions.</p>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th>April opening</th>
+<th style="text-align: right;">EVs parked all run</th>
+<th>Away sales</th>
+<th>Export screening</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A · bf5969</td>
+<td>Empty</td>
+<td style="text-align: right;">124</td>
+<td>Off</td>
+<td>On</td>
+</tr>
+<tr>
+<td>B · a93d9f</td>
+<td>March rollout</td>
+<td style="text-align: right;">124</td>
+<td>Off</td>
+<td>On</td>
+</tr>
+<tr>
+<td>C · 1c20e2</td>
+<td>March rollout</td>
+<td style="text-align: right;">124</td>
+<td>On</td>
+<td>Off</td>
+</tr>
+<tr>
+<td>D · eac4c9</td>
+<td>March rollout</td>
+<td style="text-align: right;">376</td>
+<td>On, no away stops</td>
+<td>Off</td>
+</tr>
+<tr>
+<td>E · 1ea0d0, latest</td>
+<td>March rollout</td>
+<td style="text-align: right;">0</td>
+<td>On</td>
+<td>Off</td>
+</tr>
+</tbody>
+</table>
+<h3>Three-day comparison</h3>
+<p>The next four figures use <strong>April 7–9, 2018</strong>, the same 288 intervals for every run. The tables below cover the full 150 days.</p>
+<p><img alt="Five panels comparing baseline, charging-only, and dynamic-trading substation draw in MW for runs A through E from April 7 to April 9." src="report-figures/three-day-substation-draw.png" /></p>
+<p><em>Figure 1. Substation draw includes feeder losses. In run D, the baseline and charging-only traces nearly overlap because the parked fleet began the experiment close to full and used no energy for driving.</em></p>
+<p><img alt="Five panels comparing baseline, charging-only, and dynamic-trading coal and gas output in MW for runs A through E over the same three days." src="report-figures/three-day-coal-gas.png" /></p>
+<p><em>Figure 2. Coal and gas output follows the remaining demand after solar and fixed nuclear, subject to the 0.60 MW floor. Trading used less coal and gas than charging only across these three days in all five runs, even though the green trace sometimes rises above the charging-only trace.</em></p>
+<p><img alt="Realized electricity price in dollars per MWh for baseline, charging only, and dynamic trading in each of runs A through E, April 7–9." src="report-figures/three-day-electricity-price.png" /></p>
+<p><em>Figure 3. Realized price is the average generation cost per MWh after dispatch. Individual EVs settle at their accepted quotes.</em></p>
+<p><img alt="EV purchases above zero and sales below zero in kWh per 15-minute interval for runs A through E, April 7–9." src="report-figures/three-day-ev-energy-trades.png" /></p>
+<p><em>Figure 4. Baseline has zero EV energy flow, and the charging-only case has zero EV sales. In run E, EVs bought 37.38 MWh and sold 22.09 MWh with trading, compared with 11.87 MWh bought under charging only.</em></p>
+<h3>Full 150-day comparison</h3>
+<p><img alt="Coal and gas generation totals for each of the three cases in all five runs, with bars showing the savings from trading against each run’s charging-only case." src="report-figures/150-day-coal-gas-comparison.png" /></p>
+<p><em>Figure 5. The left panel compares absolute generation. The right panel compares trading with charging only within each run. Run E had the largest reduction against charging only, while run D had the lowest absolute coal and gas generation.</em></p>
+<p><strong>Generation and bills.</strong> The no-EV baseline used <strong>6,236.17 MWh of coal + gas</strong>, cost <strong>$315,605.91</strong> to produce, and billed customers about <strong>$303,892</strong> in every run. In the next table, each saving compares trading with the same run’s charging-only case. All-customer bills include EV purchases and sale credits.</p>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th style="text-align: right;">Coal + gas, charging → trading (MWh)</th>
+<th style="text-align: right;">Coal + gas saved</th>
+<th style="text-align: right;">Generation cost saved</th>
+<th style="text-align: right;">All-customer bills, charging → trading</th>
+<th style="text-align: right;">EV bills, charging → trading</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td style="text-align: right;">6,543.43 → 6,239.60</td>
+<td style="text-align: right;">303.83 (4.64%)</td>
+<td style="text-align: right;">$9,438.53</td>
+<td style="text-align: right;">$314,272 → $306,620</td>
+<td style="text-align: right;">$5,637 → $1,310</td>
+</tr>
+<tr>
+<td>B</td>
+<td style="text-align: right;">6,519.03 → 6,203.26</td>
+<td style="text-align: right;">315.77 (4.84%)</td>
+<td style="text-align: right;">$9,809.51</td>
+<td style="text-align: right;">$313,439 → $305,514</td>
+<td style="text-align: right;">$5,078 → $747</td>
+</tr>
+<tr>
+<td>C</td>
+<td style="text-align: right;">6,519.03 → 6,209.13</td>
+<td style="text-align: right;">309.91 (4.75%)</td>
+<td style="text-align: right;">$9,627.23</td>
+<td style="text-align: right;">$313,439 → $305,860</td>
+<td style="text-align: right;">$5,078 → $991</td>
+</tr>
+<tr>
+<td>D</td>
+<td style="text-align: right;">6,236.40 → 6,189.13</td>
+<td style="text-align: right;">47.27 (0.76%)</td>
+<td style="text-align: right;">$1,468.31</td>
+<td style="text-align: right;">$303,904 → $302,593</td>
+<td style="text-align: right;">$8 → $568 credit</td>
+</tr>
+<tr>
+<td>E</td>
+<td style="text-align: right;">6,666.50 → 6,321.11</td>
+<td style="text-align: right;"><strong>345.39 (5.18%)</strong></td>
+<td style="text-align: right;"><strong>$10,729.56</strong></td>
+<td style="text-align: right;"><strong>$318,370 → $309,833</strong></td>
+<td style="text-align: right;"><strong>$7,748 → $2,812</strong></td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th style="text-align: right;">EV buys / sales (count)</th>
+<th style="text-align: right;">EV energy bought / sold (MWh)</th>
+<th style="text-align: right;">Blocked sales</th>
+<th style="text-align: right;">Overload / voltage violation intervals</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td style="text-align: right;">731,596 / 375,236</td>
+<td style="text-align: right;">1,138.25 / 595.07</td>
+<td style="text-align: right;">137,160</td>
+<td style="text-align: right;">3,985 / 27</td>
+</tr>
+<tr>
+<td>B</td>
+<td style="text-align: right;">723,769 / 391,711</td>
+<td style="text-align: right;">1,127.51 / 612.81</td>
+<td style="text-align: right;">150,579</td>
+<td style="text-align: right;">3,938 / 23</td>
+</tr>
+<tr>
+<td>C</td>
+<td style="text-align: right;">805,830 / 472,933</td>
+<td style="text-align: right;">1,275.85 / 733.21</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">4,339 / 170</td>
+</tr>
+<tr>
+<td>D</td>
+<td style="text-align: right;">61,658 / 71,282</td>
+<td style="text-align: right;">76.35 / 80.48</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1,583 / 0</td>
+</tr>
+<tr>
+<td>E</td>
+<td style="text-align: right;">1,147,670 / 634,987</td>
+<td style="text-align: right;">1,797.45 / 994.14</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">5,297 / 507</td>
+</tr>
+</tbody>
+</table>
+<p>A trade count is one EV buying or selling a nonzero amount in one interval. Blocked sales count proposed EV exports that were cancelled before delivery.</p>
+<p><strong>What the results show.</strong> The latest run had the largest reduction against its own charging-only case, <strong>345.39 MWh of coal + gas</strong>, and lowered all-customer net bills by <strong>$8,536.85</strong>. Its trading case still used <strong>84.94 MWh more coal + gas than the no-EV baseline</strong>. With each case’s observed draw held fixed, the dispatch calculation puts solar’s displacement of flexible coal + gas at <strong>5,015.74 MWh with trading versus 4,336.53 MWh with charging only</strong> in run E. That estimates how much scheduled solar was used to displace flexible generation in the model.</p>
+<p>Run E also had the most grid violations and recorded <strong>40.90 kWh of unmet driving energy</strong>. It ended with <strong>5.83 MWh</strong> in the trading fleet versus <strong>28.79 MWh</strong> with charging only. Matching the ending charge would require <strong>25.51 MWh</strong> of extra charger input before feeder losses. The fuel effect depends on when that recharge occurs. The results are for a synthetic feeder, with modeled prices, zero battery wear cost, and the stated export-screening policies.</p>
+<p><strong>Run records.</strong> A <code>20261114-114723-bf5969</code>, B <code>20261114-140910-a93d9f</code>, C <code>20261115-143825-1c20e2</code>, and D <code>20261115-184625-eac4c9</code> are in the research archive. E <code>20261115-221827-1ea0d0</code> is the latest completed local run.</p>
+</main></body>
+</html>

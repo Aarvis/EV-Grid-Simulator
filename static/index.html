@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Greensboro Grid Lab</title><link rel="stylesheet" href="/style.css?v=solar1"></head>
+<body>
+<header><div class="brand"><span class="logo">G<span>·</span></span><div><h1>Greensboro <span>Grid Lab</span></h1><p>SMART-DS / ELECTRICAL BASELINE</p></div></div><div class="server-state"><span id="status-dot" class="dot"></span><span id="server-status">Preparing engine…</span><span class="local-tag">LOCAL</span></div></header>
+<main>
+<section class="intro"><div><div class="eyebrow">01 / DISTRIBUTION DISTRICT</div><h2>Follow the power.</h2><p>Explore the network. Run a day. Inspect what reaches each connection.</p></div><div class="station"><strong>uhs19_1247</strong><span>Greensboro, NC · 2018 profiles</span><small>69 kV external supply</small></div></section>
+<div id="error" role="alert" hidden></div>
+<section class="controls panel"><div class="field"><label for="date">Start date · profile calendar</label><input id="date" type="date" min="2018-01-01" max="2018-12-31" value="2018-04-01" required></div><div class="field"><label for="days">Simulation days</label><input id="days" type="number" min="1" max="150" step="1" value="150" required></div><button id="run" class="primary" disabled>▶ Run baseline</button><button id="run-ev" class="primary" disabled>Run EV simulation</button><button id="cancel" disabled>Stop run</button><div class="run-progress"><div id="progress-label" aria-live="polite">Waiting for dataset checks</div><progress id="progress" value="0" max="96"></progress></div><a id="export" class="button disabled" href="#" aria-disabled="true">↓ Export CSV</a></section>
+<section id="scenario-setup" class="panel setup-panel">
+<div class="panel-heading"><div><h3>Scenario setup</h3><p>Set a date and run the baseline, or generate a fleet and run the full EV comparison.</p></div></div>
+<div class="fleet-body">
+<details open><summary>Fleet and EV adoption</summary><div class="fleet-controls">
+<div class="field"><label for="fleet-seed">Random seed</label><input id="fleet-seed" type="number" min="0" max="4294967295" step="1" value="32"></div>
+<div class="field"><label for="fleet-mode">Fleet size setting</label><select id="fleet-mode"><option value="adoption">EV adoption percentage</option><option value="fixed">Fixed number of EVs</option></select></div>
+<div class="field" id="adoption-field"><label for="fleet-adoption">EVs among all vehicles (%)</label><input id="fleet-adoption" type="number" min="0" max="100" step="0.1" value="50"></div>
+<div class="field" id="fixed-field" hidden><label for="fleet-count">Number of EVs</label><input id="fleet-count" type="number" min="0" max="100000" step="1" value="500"></div>
+<button class="primary" id="fleet-generate" disabled>Generate EV fleet</button>
+<a id="fleet-export" class="button disabled" aria-disabled="true" href="#">↓ Fleet JSON</a>
+</div>
+<div class="fleet-saved"><label for="fleet-scenarios">Saved fleet</label><select id="fleet-scenarios" aria-label="Select saved fleet"><option>Loading…</option></select><span id="fleet-status" class="muted" role="status"></span></div>
+<div class="fleet-controls"><div class="field"><label for="fleet-home-access">Home charger access in fleet inventory (%)</label><input id="fleet-home-access" type="number" min="0" max="100" step="1" value="100"></div><div class="field"><label for="fleet-level1">Level 1 among home chargers (%)</label><input id="fleet-level1" type="number" min="0" max="100" step="1" value="20"></div></div><p class="fleet-note">The EV simulation equips every EV with a home charger. Generating the fleet also prepares travel plans for the selected dates.</p></details>
+<details><summary>Travel and saved EV days</summary><p id="travel-source" class="fleet-note" role="status">Checking the NHTS diary library…</p>
+<div class="fleet-controls">
+
+<div class="field"><label for="travel-mean">Mean distance (km/day)</label><input id="travel-mean" type="number" min="0" max="1000" step="0.1" value="46"></div>
+<div class="field"><label for="travel-std">Standard deviation (km)</label><input id="travel-std" type="number" min="0" max="1000" step="0.1" value="22.5"></div>
+<div class="field"><label for="travel-seed">Travel seed</label><input id="travel-seed" type="number" min="0" max="4294967295" step="1" value="42"></div>
+</div>
+<details><summary>Distance bounds & diary matching</summary><div class="fleet-controls travel-options">
+<div class="field"><label for="travel-min">Minimum moving distance (km)</label><input id="travel-min" type="number" min="0" max="1000" step="0.1" value="0"></div>
+<div class="field"><label for="travel-max">Maximum distance (km)</label><input id="travel-max" type="number" min="0.1" max="2000" step="0.1" value="120"></div>
+<div class="field"><label for="travel-unused">Unused EVs (%)</label><input id="travel-unused" type="number" min="0" max="100" step="0.1" value="0"></div>
+<div class="field"><label for="travel-tolerance">Diary distance tolerance (km)</label><input id="travel-tolerance" type="number" min="0" max="100" step="0.1" value="5"></div>
+<label><input id="travel-month" type="checkbox" checked> Prefer the same month</label></div><p class="muted">Mean and population standard deviation include unused EVs. Original diary times and distances are preserved; achieved distances may differ from targets. Matching falls back from month + weekday to weekday, then weekday/weekend.</p></details>
+<div class="fleet-saved"><label for="travel-scenarios">Saved travel day</label><select id="travel-scenarios"><option value="">No saved day for this fleet</option></select><span id="travel-status" class="muted" role="status"></span></div>
+</details>
+<details><summary>Charging and trading</summary><div class="fleet-controls destination-controls">
+<div class="field"><label for="rollout-start">EV rollout start (optional)</label><input id="rollout-start" type="date" min="2018-01-01" max="2018-12-31" aria-describedby="rollout-help"><small id="rollout-help" class="muted">Defaults to 31 days before the simulation.</small></div>
+<div class="field"><label for="battery-seed">Battery and driving seed</label><input id="battery-seed" type="number" min="0" max="4294967295" step="1" value="42" required></div>
+<div class="field"><label for="charge-efficiency">Charging efficiency (%)</label><input id="charge-efficiency" type="number" min="0" max="100" step="any" value="90" required></div>
+<label><input id="away-charging" type="checkbox" checked> Allow charging away from home</label>
+<div id="away-charging-options" class="fleet-controls">
+<div class="field"><label for="away-coverage">Nonresidential buses equipped (%)</label><input id="away-coverage" type="number" min="0" max="100" step="any" value="100" required></div>
+<div class="field"><label for="away-seed">Destination seed</label><input id="away-seed" type="number" min="0" max="4294967295" step="1" value="42" required></div>
+<p class="muted">1–5 ports per equipped bus</p>
+</div></div>
+<div class="fleet-controls market-fields">
+<div class="field"><label for="market-behavior">Trading EV behavior</label><select id="market-behavior"><option value="sell">Sell with automatic charging</option><option value="buy_sell_wait" selected>Buy, sell, or wait</option></select></div>
+<div class="field"><label for="market-pricing">Trading price mode</label><select id="market-pricing"><option value="fixed">Fixed price per interval</option><option value="dynamic" selected>Dynamic price per EV</option></select></div>
+<div class="field"><label for="market-share">Trading EVs (%)</label><input id="market-share" type="number" min="0" max="100" step="any" value="100" required></div>
+<div class="field"><label for="market-trading-only">Trading EVs that stay home (%)</label><input id="market-trading-only" type="number" min="0" max="100" step="any" value="0" required aria-describedby="market-trading-only-help"><small id="market-trading-only-help" class="muted">The same EVs stay plugged in at home throughout the run. Charging only uses the same trip restrictions.</small></div>
+<div class="field"><label for="market-seed">Trading seed</label><input id="market-seed" type="number" min="0" max="4294967295" step="1" value="42" required></div>
+<div class="field"><label for="market-efficiency">Discharge efficiency (%)</label><input id="market-efficiency" type="number" min="0" max="100" step="any" value="90" required></div>
+<div class="field"><label for="market-reserve">Minimum battery charge (%)</label><input id="market-reserve" type="number" min="0" max="100" step="any" value="10" required></div>
+<div class="field"><label for="market-buffer">Travel reserve buffer (%)</label><input id="market-buffer" type="number" min="0" max="100" step="any" value="5" required></div>
+<div class="field"><label for="market-power">Export limit per EV (kW)</label><input id="market-power" type="number" min="0" step="any" value="7.2" required></div>
+<div class="field"><label for="market-wear">Wear cost ($/battery kWh sold)</label><input id="market-wear" type="number" min="0" step="any" value="0" required></div>
+<label><input id="market-away" type="checkbox" checked> Allow export at equipped away chargers</label>
+<label><input id="market-allow-grid-violations" type="checkbox" checked> Allow EV sales despite grid violations</label>
+</div>
+<p class="fleet-note">Buy, sell, or wait protects remaining driving energy and uses tomorrow’s trips after the final return home. Passive EVs charge toward 100% at available chargers. Battery capacity decay is zero.</p></details>
+<details><summary>Generation costs and dispatch</summary><div class="fleet-controls" aria-label="Generation settings for the next run">
+<div class="field"><label for="nuclear-mode">Generation sizing</label><select id="nuclear-mode"><option value="auto">Use baseline minimum</option><option value="manual" selected>Set nuclear output manually</option><option value="floor">Set total generation minimum</option></select></div>
+<div class="field" id="nuclear-manual"><label for="nuclear-mw">Fixed nuclear generation (MW)</label><input id="nuclear-mw" type="number" min="0" step="any" value="3.696" required></div>
+<div class="field" id="generation-floor-field" hidden><label for="generation-floor">Minimum total generation (MW)</label><input id="generation-floor" type="number" min="0" step="any" value="4.296" required disabled></div>
+<div class="field"><label for="coal-gas-min">Minimum coal + natural gas generation (MW)</label><input id="coal-gas-min" type="number" min="0" step="any" value="0.60" required></div>
+<div class="field"><label for="nuclear-cost">Nuclear cost ($/MWh)</label><input id="nuclear-cost" type="number" min="0" step="any" value="9.16" required></div>
+<div class="field"><label for="coal-gas-cost">Coal + gas cost ($/MWh)</label><input id="coal-gas-cost" type="number" min="0" step="any" value="31.065" required></div>
+<div class="field"><label for="solar-capacity">Solar rated capacity (MW)</label><input id="solar-capacity" type="number" min="0" step="any" value="8" required></div>
+<div class="field"><label for="solar-performance">Solar performance factor</label><input id="solar-performance" type="number" min="0" max="1" step="any" value="0.85" required></div>
+<div class="field"><label for="solar-cost">Solar generation cost ($/MWh)</label><input id="solar-cost" type="number" min="0" step="any" value="0" required></div>
+</div>
+<p class="fleet-note">Coal + natural gas covers the demand left after fixed nuclear and solar, subject to its minimum. Excess generation is recorded as surplus. Set solar capacity to 0 MW for a run without solar.</p>
+</details>
+</div>
+</section>
+<section id="power-panel" class="panel chart-panel">
+<div class="panel-heading"><div><h3>Power through time</h3><p id="power-chart-context">15-minute intervals · click a plot to inspect a time</p></div><label><input id="follow-live" type="checkbox"> Follow live</label><button id="open-charging-comparison" hidden>Open EV charging comparison</button></div>
+<div class="power-legend chart-keys"><span class="teal">● Supply</span><span class="blue">● Net load</span><span class="amber">● Losses</span><span id="charging-chart-keys" hidden style="color:#d3a5f3">● EV imports</span><span id="trading-chart-key" hidden style="color:#ef96c5">● EV exports</span></div>
+<div id="power-plots" class="power-plots">
+<div><h4>Baseline</h4><canvas id="chart" aria-label="Baseline power"></canvas></div>
+<div id="charging-power-plot" hidden><h4>EV charging only</h4><canvas id="chart-with-ev" aria-label="Power with EV charging"></canvas></div>
+<div id="trading-power-plot" hidden><h4>EV trading</h4><canvas id="chart-with-trading" aria-label="Power with EV trading"></canvas></div>
+</div></section>
+<section class="metrics"><article><label>Customer connections</label><strong id="customers">—</strong><small id="objects">Loading network inventory</small></article><article><label>Energy supplied</label><strong id="supplied">—</strong><small>kWh · completed intervals</small></article><article><label>Customer consumption</label><strong id="consumption">—</strong><small>kWh · actual solved demand</small></article><article><label>Network losses</label><strong id="loss">—</strong><small id="loss-detail">Lines + transformers + other model losses</small></article></section>
+<section class="panel chart-panel" id="generation-panel">
+<div class="panel-heading"><div><h3>Generation and cost</h3><p>Supply allocated at the 69 kV substation, including distribution losses.</p></div></div>
+<div class="fleet-body">
+<p id="generation-status" class="muted" aria-live="polite">Run a baseline or EV charging comparison to see the generation mix and cost.</p>
+<div id="generation-results" hidden>
+<div id="solar-output" hidden><h4>Solar generation</h4><p id="solar-profile-label" class="muted"></p><canvas id="generation-solar" aria-label="Solar generation by 15-minute interval, shared by all scenarios"></canvas></div>
+<div class="chart-keys generation-legend"><span class="blue">● Nuclear</span><span class="amber">● Coal + gas</span><span class="teal">● Solar</span><span>━ Substation draw</span></div>
+<div class="power-plots" id="generation-plots">
+<div><h4>Without EV charging</h4><canvas id="generation-baseline" aria-label="Generation without EV charging"></canvas></div>
+<div id="generation-ev-plot" hidden><h4>With EV charging</h4><canvas id="generation-ev" aria-label="Generation with EV charging"></canvas></div>
+<div id="generation-trading-plot" hidden><h4>With EV trading</h4><canvas id="generation-trading" aria-label="Generation with EV trading"></canvas></div>
+</div>
+<p id="generation-interval" class="muted"></p>
+<div class="table-wrap"><table class="fleet-table"><caption>Generation and operating cost for the run</caption><thead><tr><th scope="col">Scenario</th><th scope="col">Nuclear (MWh)</th><th scope="col">Nuclear cost ($)</th><th scope="col">Coal + gas (MWh)</th><th scope="col">Coal + gas cost ($)</th><th scope="col">Solar (MWh)</th><th scope="col">Solar cost ($)</th><th scope="col">Total generated (MWh)</th><th scope="col">Surplus (MWh)</th><th scope="col">Total cost ($)</th><th scope="col">Avg. cost ($/MWh)</th></tr></thead><tbody id="generation-totals"></tbody></table></div>
+<details><summary>15-minute generation and cost</summary><div class="table-wrap household-scroll"><table class="fleet-table"><thead><tr><th scope="col">Interval ending</th><th scope="col">Scenario</th><th scope="col">Draw (MW)</th><th scope="col">Nuclear (MW)</th><th scope="col">Coal + gas (MW)</th><th scope="col">Solar (MW)</th><th scope="col">Surplus (MW)</th><th scope="col">Cost ($)</th><th scope="col">Next offer ($/MWh)</th></tr></thead><tbody id="generation-rows"></tbody></table></div></details>
+</div>
+</div></section>
+<section class="panel chart-panel" id="market-panel" hidden>
+<div class="panel-heading"><div><h3>EV trading and daily bills</h3><p id="market-summary"></p></div><a id="bills-export" class="button">↓ Daily bills JSON</a></div>
+<div class="fleet-body">
+<div id="market-comparison" hidden>
+<p id="market-latest" class="muted"></p>
+<div class="table-wrap"><table class="fleet-table"><thead><tr><th>Scenario</th><th>EV imports (kWh)</th><th>EV exports (kWh)</th><th>Grid losses (kWh)</th><th>EV energy at close (kWh)</th><th>EV net bills ($)</th><th>All net bills ($)</th><th>Generation cost less bills ($)</th></tr></thead><tbody id="market-daily"></tbody></table></div>
+<p id="market-grid-policy" class="fleet-note"></p>
+<details><summary>15-minute trading prices and quantities</summary><div class="table-wrap household-scroll"><table class="fleet-table"><thead><tr><th>Interval ending</th><th>Opening quote ($/MWh)</th><th>Closing quote ($/MWh)</th><th>Realized ($/MWh)</th><th>Passive imports (kWh)</th><th>Trading imports (kWh)</th><th>EV exports (kWh)</th><th>Curtailed exports (kWh)</th><th>Upstream export (kWh)</th></tr></thead><tbody id="market-intervals"></tbody></table></div></details>
+</div>
+<details id="daily-comparison" hidden><summary>Daily results and midnight carryover</summary><div class="table-wrap"><table class="fleet-table"><thead><tr><th>Date</th><th>Case</th><th>Nuclear (MWh)</th><th>Coal + gas (MWh)</th><th>Solar (MWh)</th><th>Generation cost ($)</th><th>EV imports (kWh)</th><th>EV exports (kWh)</th><th>Opening battery (kWh)</th><th>Closing battery (kWh)</th><th>Unmet driving (kWh)</th><th>Battery value ($)</th><th>Opening → next offer ($/MWh)</th></tr></thead><tbody id="daily-rows"></tbody></table></div></details>
+<div class="fleet-controls billing-controls">
+<div class="field" id="bill-day-field" hidden><label for="bill-day">Billing day</label><select id="bill-day"></select></div>
+<div class="field"><label for="bill-scenario">Bill scenario</label><select id="bill-scenario"></select></div>
+<div class="field"><label for="bill-kind">Account type</label><select id="bill-kind"><option value="households">Households including their EVs</option><option value="vehicles">Individual EVs</option><option value="services">Grid meters excluding EV subaccounts</option></select></div>
+<div class="field"><label for="bill-filter">Find an account</label><input id="bill-filter" type="search" placeholder="Household, EV or bus ID"></div>
+</div>
+<p id="bill-status" class="muted" aria-live="polite"></p>
+<div class="table-wrap household-scroll"><table class="fleet-table"><thead><tr><th>Account</th><th>Imports (kWh)</th><th>Exports (kWh)</th><th>Purchases ($)</th><th>Allocated losses (kWh)</th><th>Loss charge ($)</th><th>Export credit ($)</th><th>Net bill ($)</th></tr></thead><tbody id="bill-rows"></tbody></table></div>
+</div></section>
+<section class="panel fleet-panel" id="fleet-panel">
+<div class="panel-heading"><div><h3>Household vehicles & EV storage</h3><p>Build a reproducible fleet and inspect where its battery capacity is connected.</p></div><span class="chip">INVENTORY</span></div>
+<div class="fleet-body">
+<p id="fleet-audit" class="fleet-note">Reconciling household service connections…</p><p class="fleet-scope">Home charging runs assign a charger to every EV in the saved travel day.</p>
+<section class="metrics fleet-metrics">
+<article><label>Eligible household services</label><strong id="fleet-households">—</strong><small>One household proxy per split-phase service</small></article>
+<article><label>All household vehicles</label><strong id="fleet-vehicles">—</strong><small id="fleet-ownership">0–5 vehicles per household</small></article>
+<article><label>Electric vehicles</label><strong id="fleet-evs">—</strong><small id="fleet-adoption-result">Default adoption: 10%</small></article>
+<article><label>Nominal EV battery capacity</label><strong id="fleet-storage">—</strong><small id="fleet-storage-detail">Nameplate inventory · SOC not assigned</small></article>
+<article><label>Potential home charging</label><strong id="fleet-power">—</strong><small id="fleet-power-detail">kW · if all home chargers operate together</small></article>
+</section>
+<div class="fleet-tables"><div><h4>EV battery categories</h4><div class="table-wrap"><table class="fleet-table"><thead><tr><th>Category</th><th>Battery</th><th>EVs</th><th>Actual / target share</th><th>Total capacity</th></tr></thead><tbody id="fleet-categories"></tbody></table></div><p id="fleet-chargers" class="muted"></p></div><div><h4>Vehicles at each household service</h4><div class="fleet-filter"><input id="fleet-filter" placeholder="Filter household or bus ID" aria-label="Filter household inventory"><label><input id="fleet-only-ev" type="checkbox" checked> Homes with EVs</label></div><div class="table-wrap household-scroll"><table class="fleet-table"><thead><tr><th>Service bus</th><th>Vehicles / EVs</th><th>Battery kWh</th><th>Home kW</th><th></th></tr></thead><tbody id="fleet-household-rows"></tbody></table></div><p id="fleet-household-count" class="muted"></p></div></div>
+<details><summary>Allocation assumptions & service audit</summary><div class="fleet-assumptions"><p>Vehicle ownership: 0 / 1 / 2 / 3 / 4 / 5 vehicles at 8.2 / 40.1 / 34.2 / 12 / 4 / 1.5%. Integer household counts are apportioned, then randomly assigned.</p><p>Battery shares and charger assignments are provisional scenario assumptions. Home Level 1 is 1.44 kW; Level 2 by battery category is 3.84 / 7.68 / 9.60 / 11.52 kW, capped by the assumed onboard AC rating. Realized battery and charging shares can vary in a small fleet.</p><p>Battery totals are nominal capacity. Plugged-in availability, SOC, travel reserves, V2G hardware and grid hosting capacity are not established here. This inventory does not add charging demand to the electrical runs.</p><div id="fleet-review"></div><pre id="fleet-debug"></pre></div></details>
+</div></section>
+<section class="panel travel-panel" id="travel-panel">
+<div class="panel-heading"><div><h3>EV travel through the day</h3><p>Complete NHTS trip diaries · every EV starts and finishes at its own home</p></div><span class="chip">MOBILITY</span></div><div class="fleet-body">
+<p class="muted">Travel schedules supply driving and parking times for the charging comparison.</p>
+<div id="travel-results" hidden><section class="metrics">
+<article><label>EVs / trips</label><strong id="travel-count">—</strong><small id="travel-return">—</small></article>
+<article><label>Achieved mean distance</label><strong id="travel-achieved-mean">—</strong><small id="travel-target-mean">—</small></article>
+<article><label>Achieved standard deviation</label><strong id="travel-achieved-std">—</strong><small id="travel-target-std">—</small></article>
+<article><label>Fleet distance</label><strong id="travel-total">—</strong><small id="travel-match">—</small></article></section>
+<p id="travel-warning" class="warn" role="status" hidden></p>
+<div class="travel-clock"><button id="travel-play" aria-label="Play EV travel day">▶ Play day</button><label for="travel-minute" class="sr-only">Travel time of day</label><input id="travel-minute" type="range" min="0" max="1440" step="1" value="0"><strong id="travel-time">00:00</strong></div>
+<div id="travel-now" class="travel-now" aria-live="polite"></div><canvas id="travel-chart" aria-label="EV counts at home, driving and parked away over the day"></canvas>
+<div class="travel-legend"><span class="teal">● Home</span><span class="amber">● Driving</span><span class="blue">● Parked away</span><label><input id="travel-map" type="checkbox" checked> Map badges show EVs currently at home</label></div>
+<p class="muted">The travel clock is separate from the electrical simulation clock. Map badges stay at home connections; away vehicles are not drawn on electrical wires.</p>
+<div class="fleet-tables"><div><h4>EV schedules</h4><div class="fleet-filter"><input id="travel-filter" aria-label="Filter EV travel schedules" placeholder="Filter EV, household or home bus"></div><div class="table-wrap household-scroll"><table class="fleet-table"><thead><tr><th>EV / home bus</th><th>Daily km</th><th>Trips</th><th>State now</th><th></th></tr></thead><tbody id="travel-rows"></tbody></table></div></div><div><h4 id="travel-vehicle-title">Select an EV</h4><div id="travel-vehicle"></div></div></div>
+<div class="travel-exports"><a id="travel-export-json" class="button">↓ Travel JSON</a><a id="travel-export-trips" class="button">↓ Trips CSV</a><a id="travel-export-states" class="button">↓ State intervals CSV</a></div>
+<details><summary>Travel diagnostics & source audit</summary><pre id="travel-debug"></pre></details></div></div></section>
+<section class="workspace"><div class="panel network-panel"><div class="panel-heading"><div><h3>Electrical network</h3><p id="network-meta">Reading topology…</p><p id="fleet-map-status" aria-live="polite">EV inventory is loading…</p></div><div class="map-controls"><label class="sr-only" for="layer">Network color layer</label><select id="layer"><option value="voltage">Bus voltage</option><option value="loading">Equipment loading</option><option value="loss">Equipment loss</option><option value="type">Equipment type</option><option value="fleet">EV fleet</option></select><label class="fleet-overlay-toggle"><input id="fleet-overlay" type="checkbox" checked> EVs</label><button id="reset-view" title="Fit network">Fit</button></div></div><div class="map-wrap"><canvas id="network" tabindex="0" aria-label="Interactive electrical network. Drag to pan, scroll to zoom, click a bus or branch. Use the search field below as a keyboard alternative."></canvas><div class="map-caption">Drag to pan · scroll to zoom · click to inspect</div><output id="map-selection" class="map-selection" aria-live="polite" hidden></output><div id="legend" class="legend"></div></div><div class="timeline"><button id="play" title="Play intervals" disabled>▶</button><input id="interval" type="range" min="0" max="0" value="0" disabled aria-label="Simulation interval"><strong id="timestamp">No run selected</strong></div></div>
+<aside class="panel inspector"><div class="panel-heading"><h3>Connection inspector</h3><span class="chip">LIVE STATE</span></div><label for="search">Find a bus or element</label><div class="search-row"><input id="search" placeholder="Bus or element ID" list="objects-list"><button id="find">Find</button></div><datalist id="objects-list"></datalist><div id="selection"><div class="empty"><div class="empty-icon">⌖</div><h4>A closer look</h4><p>Select a bus, line or transformer on the map to inspect its state and electrical properties.</p></div></div></aside></section>
+<section id="charging-panel" class="panel chart-panel" hidden>
+<div class="panel-heading"><div><h3>EV charging comparison</h3><p id="charging-scenario"></p></div><div class="chart-keys"><a class="button" href="#generation-panel">Generation and cost</a><a id="charging-csv" class="button" hidden>↓ 15-minute CSV</a><a id="charging-battery" class="button" hidden>↓ Battery schedules</a></div></div>
+<div class="fleet-body">
+<section class="metrics">
+<article><label>EV charging energy</label><strong id="charging-draw">—</strong><small id="charging-energy-split">kWh drawn at charging buses</small></article>
+<article><label>Peak EV charging</label><strong id="charging-peak">—</strong><small>kW averaged over 15 minutes</small></article>
+<article><label>Additional substation supply</label><strong id="charging-supply">—</strong><small>kWh compared with baseline</small></article>
+<article><label>Additional grid losses</label><strong id="charging-loss">—</strong><small>kWh compared with baseline</small></article>
+</section>
+<p id="charging-destinations" hidden></p><p id="charging-totals"></p><p id="charging-unmet" class="warn"></p>
+<section id="battery-tracker" class="battery-tracker" hidden aria-labelledby="battery-title">
+<h4 id="battery-title">EV battery tracker</h4>
+<p id="battery-fleet-summary" class="muted"></p>
+<div id="battery-case-field" class="field" hidden><label for="battery-case">Battery scenario</label><select id="battery-case"><option value="charging">EV charging only</option><option value="trading">EV trading</option></select></div>
+<div id="battery-day-field" class="field" hidden><label for="battery-day">Battery day</label><select id="battery-day"></select></div>
+<div class="field"><label for="battery-vehicle">Vehicle · home connection</label><select id="battery-vehicle"></select></div>
+<p id="battery-vehicle-spec" class="muted"></p>
+<p id="battery-loading" class="muted" aria-live="polite"></p>
+<div id="battery-detail" hidden>
+<canvas id="battery-soc-chart" aria-label="Selected EV battery charge over the day"></canvas>
+<div class="travel-clock"><label for="battery-interval">Time of day</label><input id="battery-interval" type="range" min="0" max="96" value="0" step="1"><output id="battery-time" for="battery-interval">00:00</output></div>
+<div id="battery-state" class="battery-state" aria-live="polite"></div>
+<p id="battery-flow" class="muted"></p>
+<p id="battery-day-cost" class="muted"></p>
+</div>
+</section>
+<div id="charging-interval" aria-live="polite"></div>
+<h4>15-minute results</h4>
+<div class="table-wrap household-scroll"><table class="fleet-table charging-table"><thead><tr><th>Interval ending</th><th>Baseline demand (kW)</th><th>With EVs (kW)</th><th>EV draw (kWh)</th><th>Additional supply (kWh)</th><th>Max line loading</th><th>Max transformer loading</th><th>Min voltage (p.u.)</th></tr></thead><tbody id="charging-rows"></tbody></table></div>
+</div></section>
+<section class="panel bottom-panel"><div class="panel-heading tabs"><div role="tablist"><button class="tab active" data-tab="diagnostics" role="tab" aria-selected="true">Diagnostics</button><button class="tab" data-tab="logs" role="tab" aria-selected="false">Event log</button><button class="tab" data-tab="runs" role="tab" aria-selected="false">Run history</button></div><span id="run-id" class="muted">No run selected</span></div><div id="diagnostics" class="tab-content"><div id="checks" class="check-grid"></div><h4>Selected interval · exceptions</h4><div id="exceptions" class="exception-list muted">Run a baseline to inspect voltage and loading screens.</div><details><summary>Engine, assumptions and debug details</summary><pre id="debug">Preparing…</pre></details></div><div id="logs" class="tab-content" hidden><div class="log-tools"><label><input id="only-run" type="checkbox"> Selected run only</label><button id="refresh-logs">Refresh</button></div><div id="log-lines" class="log-lines" aria-live="polite"></div></div><div id="runs" class="tab-content" hidden><div id="history" class="history"></div></div></section>
+<footer><span>SMART-DS v1.0 · Synthetic network & demand · CC BY 4.0</span><span>Electrical boundary: substation source to customer connections</span></footer>
+</main><script src="/fleet.js?v=sequence1" defer></script><script src="/battery.js?v=behavior1" defer></script><script src="/travel.js?v=sequence1" defer></script><script src="/market.js?v=grid-violations1" defer></script><script src="/app.js?v=research-defaults1" defer></script></body></html>

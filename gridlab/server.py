@@ -344,7 +344,7 @@ async def lifespan(app):
     TRAVEL_POOL.shutdown(wait=True)
 
 
-app = FastAPI(title="Greensboro Grid Lab", lifespan=lifespan)
+app = FastAPI(title="EV Grid Simulator Lab", lifespan=lifespan)
 
 
 @app.middleware("http")

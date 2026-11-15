@@ -14,7 +14,7 @@ from .config import DATA, MODEL_DIR, PREFIX, S3, STATION_KEY
 def fetch(url):
     for attempt in range(4):
         try:
-            with urlopen(Request(url, headers={"User-Agent": "GreensboroGridLab/0.1"}), timeout=90) as response:
+            with urlopen(Request(url, headers={"User-Agent": "EVGridSimulatorLab/0.1"}), timeout=90) as response:
                 return response.read()
         except Exception:
             if attempt == 3:

@@ -1,5 +1,5 @@
 [project]
-name = "greensboro-grid-lab"
+name = "ev-grid-simulator-lab"
 version = "0.1.0"
 description = "SMART-DS electrical baseline and local diagnostic dashboard"
 requires-python = ">=3.11"

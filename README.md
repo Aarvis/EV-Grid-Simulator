@@ -1,6 +1,6 @@
-# Greensboro Grid Lab
+# EV Grid Simulator Lab
 
-Greensboro Grid Lab simulates how household EV charging and bidirectional energy trading affect a synthetic electricity distribution network in Greensboro, North Carolina. Compare **no EVs**, **charging only**, and **EV trading** on the same network. The dashboard shows feeder demand, generation costs, customer bills, battery state, and voltage and equipment loading at each 15-minute interval.
+EV Grid Simulator Lab simulates how household EV charging and bidirectional energy trading affect a synthetic electricity distribution network in Greensboro, North Carolina. Compare **no EVs**, **charging only**, and **EV trading** on the same network. The dashboard shows feeder demand, generation costs, customer bills, battery state, and voltage and equipment loading at each 15-minute interval.
 
 The model uses the SMART-DS **uhs19_1247** substation and the 2018 demand calendar. A 69 kV source feeds two feeders with **2,087 buses, 1,755 lines, 335 transformers, and 1,329 electrical load objects**. Reconciling those load objects gives **732 customer connections** (458 residential-profile and 274 commercial-profile). The 447 residential 120/240 V split-phase connections serve as household proxies for fleet allocation. The profiles do not identify a separate set of verified industrial customers.
 
@@ -145,7 +145,7 @@ If data or run output was already tracked in an existing history, Git ignore rul
 For a fresh repository on the `main` branch, commit after reviewing the staged files, then push to an empty remote. Replace the example URL with your repository URL.
 
 ```bash
-git commit -m "Add Greensboro Grid Lab"
+git commit -m "Add EV Grid Simulator Lab"
 git remote add origin https://github.com/YOUR-ACCOUNT/YOUR-REPO.git
 git push -u origin main
 ```
